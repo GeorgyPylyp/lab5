@@ -1,57 +1,45 @@
+import tkinter as tk
+from tkinter import ttk, messagebox, scrolledtext
+import sys
+from io import StringIO
+
+
 class ExpertSystem:
     def __init__(self):
         self.rules = []
         self.facts = {}
-    
+
     def add_rule(self, condition, conclusion):
         """Додати правило ЯКЩО-ТО"""
         self.rules.append({
             'condition': condition,
             'conclusion': conclusion
         })
-    
+
     def add_fact(self, attribute, value):
         """Додати факт про об'єкт"""
         self.facts[attribute] = value
-    
+
     def evaluate(self):
         """Оцінити правила та зробити висновки"""
         conclusions = []
-        
+
         for rule in self.rules:
             if self._check_condition(rule['condition']):
                 conclusions.append(rule['conclusion'])
-        
+
         return conclusions
-    
+
     def _check_condition(self, condition):
         """Перевірити умову правила"""
         try:
             return eval(condition, {}, self.facts)
         except:
             return False
-    
+
     def reset_facts(self):
         """Очистити факти"""
         self.facts = {}
-
-
-def get_boolean_input(question):
-    """Отримати відповідь True/False з обробкою виключень"""
-    while True:
-        try:
-            answer = input(f"{question} (так/ні): ").strip().lower()
-            if answer in ['так', 'т', 'yes', 'y', 'true', '1']:
-                return True
-            elif answer in ['ні', 'н', 'no', 'n', 'false', '0']:
-                return False
-            else:
-                print("❗ Будь ласка, введіть 'так' або 'ні'")
-        except KeyboardInterrupt:
-            print("\n\nПрограму перервано. До побачення!")
-            exit()
-        except Exception as e:
-            print(f"❗ Сталася помилка: {e}. Спробуйте ще раз.")
 
 
 # Приклад 1: Класифікація тварин
@@ -59,7 +47,7 @@ class AnimalClassifier:
     def __init__(self):
         self.system = ExpertSystem()
         self._setup_rules()
-    
+
     def _setup_rules(self):
         # Додаємо правила класифікації тварин
         rules = [
@@ -73,64 +61,20 @@ class AnimalClassifier:
             ("size == 'великий' and has_trunk == True", "Слон"),
             ("has_stripes == True and family == 'кіт'", "Тигр")
         ]
-        
+
         for condition, conclusion in rules:
             self.system.add_rule(condition, conclusion)
-    
+
     def classify_animal(self, characteristics):
         """Класифікувати тварину на основі характеристик"""
         self.system.reset_facts()
-        
+
         # Додаємо факти про тварину
         for attr, value in characteristics.items():
             self.system.add_fact(attr, value)
-        
+
         # Отримуємо висновки
         return self.system.evaluate()
-    
-    def interactive_classification(self):
-        """Інтерактивна класифікація тварини"""
-        print("\n🎯 Давайте класифікуємо тварину!")
-        print("Відповідайте на питання 'так' або 'ні'\n")
-        
-        characteristics = {}
-        
-        # Питання для класифікації тварин
-        questions = [
-            ('has_feathers', 'Чи має тварина пірья?'),
-            ('has_milk', 'Чи годує тварина молоком своїх дітей?'),
-            ('has_scales', 'Чи має тварина луску?'),
-            ('lives_in_water', 'Чи живе тварина у воді?'),
-            ('can_fly', 'Чи вміє тварина літати?'),
-            ('can_swim', 'Чи вміє тварина добре плавати?'),
-            ('has_stripes', 'Чи має тварина смуги?'),
-            ('has_trunk', 'Чи має тварина хобот?')
-        ]
-        
-        for attr, question in questions:
-            characteristics[attr] = get_boolean_input(question)
-        
-        # Спеціальні атрибути, які потребують додаткових питань
-        if characteristics.get('has_stripes') and characteristics.get('has_milk'):
-            characteristics['family'] = 'кіт' if get_boolean_input("Чи належить тварина до родини котячих?") else 'інша'
-        
-        if characteristics.get('has_trunk'):
-            characteristics['size'] = 'великий' if get_boolean_input("Чи є тварина великою?") else 'малий'
-        
-        # Кількість ніг (спеціальна обробка)
-        legs_question = "Чи має тварина ноги?"
-        if get_boolean_input(legs_question):
-            while True:
-                try:
-                    legs = input("Скільки ніг має тварина? (введіть число): ").strip()
-                    characteristics['has_legs'] = int(legs)
-                    break
-                except ValueError:
-                    print("❗ Будь ласка, введіть коректне число ніг")
-        else:
-            characteristics['has_legs'] = 0
-        
-        return self.classify_animal(characteristics)
 
 
 # Приклад 2: Класифікація рослин
@@ -138,7 +82,7 @@ class PlantClassifier:
     def __init__(self):
         self.system = ExpertSystem()
         self._setup_rules()
-    
+
     def _setup_rules(self):
         rules = [
             ("has_flowers == True and plant_type == 'дерево'", "Квітуче дерево"),
@@ -149,182 +93,344 @@ class PlantClassifier:
             ("has_thorns == True", "Колюча рослина"),
             ("is_poisonous == True", "Отруйна рослина")
         ]
-        
+
         for condition, conclusion in rules:
             self.system.add_rule(condition, conclusion)
-    
+
     def classify_plant(self, characteristics):
         self.system.reset_facts()
-        
+
         for attr, value in characteristics.items():
             self.system.add_fact(attr, value)
-        
+
         return self.system.evaluate()
-    
-    def interactive_classification(self):
-        """Інтерактивна класифікація рослини"""
-        print("\n🌿 Давайте класифікуємо рослину!")
-        print("Відповідайте на питання 'так' або 'ні'\n")
-        
-        characteristics = {}
-        
-        # Питання для класифікації рослин
+
+
+class ExpertSystemGUI:
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("🌍 Експертна система класифікації")
+        self.root.geometry("800x600")
+        self.root.configure(bg='#f0f0f0')
+
+        self.animal_classifier = AnimalClassifier()
+        self.plant_classifier = PlantClassifier()
+
+        self.setup_ui()
+
+    def setup_ui(self):
+        # Головний фрейм
+        main_frame = ttk.Frame(self.root, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Заголовок
+        title_label = ttk.Label(main_frame,
+                                text="Експертна система класифікації",
+                                font=('Arial', 16, 'bold'),
+                                foreground='#2c3e50')
+        title_label.pack(pady=20)
+
+        # Фрейм для кнопок
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(pady=30)
+
+        # Кнопки меню
+        buttons = [
+            ("🐾 Класифікація тварин", self.open_animal_classification),
+            ("🌿 Класифікація рослин", self.open_plant_classification),
+            ("📊 Демонстрація", self.show_demo),
+            ("ℹ️ Довідка", self.show_help),
+            ("🚪 Вийти", self.root.quit)
+        ]
+
+        for text, command in buttons:
+            btn = ttk.Button(button_frame,
+                             text=text,
+                             command=command,
+                             width=25)
+            btn.pack(pady=10)
+
+        # Текстове поле для виводу
+        self.output_text = scrolledtext.ScrolledText(main_frame,
+                                                     height=15,
+                                                     width=80,
+                                                     font=('Consolas', 10))
+        self.output_text.pack(pady=20, fill=tk.BOTH, expand=True)
+
+    def clear_output(self):
+        self.output_text.delete(1.0, tk.END)
+
+    def print_output(self, text):
+        self.output_text.insert(tk.END, text + "\n")
+        self.output_text.see(tk.END)
+
+    def open_animal_classification(self):
+        self.clear_output()
+        self.print_output("🐾 КЛАСИФІКАТОР ТВАРИН\n")
+        self.print_output("Заповніть характеристики тварини:\n")
+
+        animal_window = tk.Toplevel(self.root)
+        animal_window.title("Класифікація тварин")
+        animal_window.geometry("500x700")
+
+        # Змінні для зберігання відповідей
+        self.animal_vars = {}
+
+        # Питання для тварин
+        questions = [
+            ('has_feathers', 'Чи має тварина пірья?'),
+            ('has_milk', 'Чи годує тварина молоком своїх дітей?'),
+            ('has_scales', 'Чи має тварина луску?'),
+            ('lives_in_water', 'Чи живе тварина у воді?'),
+            ('can_fly', 'Чи вміє тварина літати?'),
+            ('can_swim', 'Чи вміє тварина добре плавати?'),
+            ('has_stripes', 'Чи має тварина смуги?'),
+            ('has_trunk', 'Чи має тварина хобот?')
+        ]
+
+        for i, (attr, question) in enumerate(questions):
+            frame = ttk.Frame(animal_window)
+            frame.pack(fill=tk.X, padx=20, pady=5)
+
+            label = ttk.Label(frame, text=question, width=40)
+            label.pack(side=tk.LEFT)
+
+            var = tk.BooleanVar()
+            self.animal_vars[attr] = var
+
+            yes_btn = ttk.Radiobutton(frame, text="Так", variable=var, value=True)
+            no_btn = ttk.Radiobutton(frame, text="Ні", variable=var, value=False)
+
+            yes_btn.pack(side=tk.LEFT, padx=5)
+            no_btn.pack(side=tk.LEFT, padx=5)
+
+        # Додаткові поля
+        extra_frame = ttk.Frame(animal_window)
+        extra_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        ttk.Label(extra_frame, text="Кількість ніг:").pack(side=tk.LEFT)
+        self.legs_var = tk.StringVar(value="0")
+        legs_entry = ttk.Entry(extra_frame, textvariable=self.legs_var, width=10)
+        legs_entry.pack(side=tk.LEFT, padx=5)
+
+        # Кнопка класифікації
+        classify_btn = ttk.Button(animal_window,
+                                  text="Класифікувати",
+                                  command=lambda: self.classify_animal_gui(animal_window))
+        classify_btn.pack(pady=20)
+
+    def classify_animal_gui(self, window):
+        try:
+            characteristics = {}
+
+            # Збираємо відповіді з перемикачів
+            for attr, var in self.animal_vars.items():
+                characteristics[attr] = var.get()
+
+            # Додаємо кількість ніг
+            characteristics['has_legs'] = int(self.legs_var.get())
+
+            # Додаткові характеристики
+            if characteristics.get('has_stripes') and characteristics.get('has_milk'):
+                characteristics['family'] = 'кіт'
+            if characteristics.get('has_trunk'):
+                characteristics['size'] = 'великий'
+
+            # Класифікація
+            result = self.animal_classifier.classify_animal(characteristics)
+
+            # Вивід результату
+            self.clear_output()
+            self.print_output("🐾 РЕЗУЛЬТАТ КЛАСИФІКАЦІЇ ТВАРИНИ\n")
+            self.print_output("Введені характеристики:")
+            for attr, value in characteristics.items():
+                self.print_output(f"  {attr}: {value}")
+
+            self.print_output("\n🔍 Результат класифікації:")
+            if result:
+                for classification in result:
+                    self.print_output(f"  ✅ {classification}")
+            else:
+                self.print_output("  ❌ Класифікація не визначена")
+
+            window.destroy()
+
+        except ValueError:
+            messagebox.showerror("Помилка", "Будь ласка, введіть коректне число ніг")
+        except Exception as e:
+            messagebox.showerror("Помилка", f"Сталася помилка: {e}")
+
+    def open_plant_classification(self):
+        self.clear_output()
+        self.print_output("🌿 КЛАСИФІКАТОР РОСЛИН\n")
+
+        plant_window = tk.Toplevel(self.root)
+        plant_window.title("Класифікація рослин")
+        plant_window.geometry("500x600")
+
+        # Змінні для зберігання відповідей
+        self.plant_vars = {}
+
+        # Питання для рослин
         questions = [
             ('has_flowers', 'Чи має рослина квіти?'),
             ('has_thorns', 'Чи має рослина колючки?'),
             ('is_edible', 'Чи їстівна ця рослина?'),
             ('is_poisonous', 'Чи отруйна ця рослина?')
         ]
-        
-        for attr, question in questions:
-            characteristics[attr] = get_boolean_input(question)
-        
-        # Визначення типу рослини
-        print("\n🎯 Який тип рослини?")
-        print("1 - Дерево")
-        print("2 - Кущ") 
-        print("3 - Трава")
-        print("4 - Овоч")
-        print("5 - Фрукт")
-        print("6 - Інше")
-        
-        while True:
-            try:
-                type_choice = input("Оберіть номер типу (1-6): ").strip()
-                type_map = {
-                    '1': 'дерево', '2': 'кущ', '3': 'трава',
-                    '4': 'овоч', '5': 'фрукт', '6': 'інше'
-                }
-                if type_choice in type_map:
-                    characteristics['plant_type'] = type_map[type_choice]
-                    break
-                else:
-                    print("❗ Будь ласка, оберіть номер від 1 до 6")
-            except KeyboardInterrupt:
-                print("\n\nПрограму перервано. До побачення!")
-                exit()
-            except Exception as e:
-                print(f"❗ Сталася помилка: {e}. Спробуйте ще раз.")
-        
-        # Середовище рослини
-        print("\n🎯 Де росте рослина?")
-        print("1 - На суші")
-        print("2 - У воді")
-        print("3 - Інше")
-        
-        while True:
-            try:
-                env_choice = input("Оберіть номер середовища (1-3): ").strip()
-                env_map = {'1': 'суша', '2': 'вода', '3': 'інше'}
-                if env_choice in env_map:
-                    characteristics['environment'] = env_map[env_choice]
-                    break
-                else:
-                    print("❗ Будь ласка, оберіть номер від 1 до 3")
-            except KeyboardInterrupt:
-                print("\n\nПрограму перервано. До побачення!")
-                exit()
-            except Exception as e:
-                print(f"❗ Сталася помилка: {e}. Спробуйте ще раз.")
-        
-        return self.classify_plant(characteristics)
 
+        for i, (attr, question) in enumerate(questions):
+            frame = ttk.Frame(plant_window)
+            frame.pack(fill=tk.X, padx=20, pady=5)
 
-# Демонстрація роботи системи
-def demo_animal_classification():
-    print("=== ДЕМОНСТРАЦІЯ КЛАСИФІКАТОРА ТВАРИН ===\n")
-    
-    classifier = AnimalClassifier()
-    
-    # Тестові приклади
-    test_animals = [
-        {
-            'name': 'Орел',
-            'characteristics': {
-                'has_feathers': True,
-                'has_milk': False,
-                'can_fly': True,
-                'has_legs': 2
-            }
-        },
-        {
-            'name': 'Кит',
-            'characteristics': {
-                'has_feathers': False,
-                'has_milk': True,
-                'lives_in_water': True,
-                'has_scales': False
-            }
-        }
-    ]
-    
-    for animal in test_animals:
-        classifications = classifier.classify_animal(animal['characteristics'])
-        print(f"Тварина: {animal['name']}")
-        print(f"Характеристики: {animal['characteristics']}")
-        print(f"Класифікація: {', '.join(classifications) if classifications else 'Не визначено'}")
-        print("-" * 50)
+            label = ttk.Label(frame, text=question, width=40)
+            label.pack(side=tk.LEFT)
 
+            var = tk.BooleanVar()
+            self.plant_vars[attr] = var
 
-# Інтерактивний режим
-def interactive_mode():
-    print("\n=== ІНТЕРАКТИВНИЙ РЕЖИМ ===")
-    print("Оберіть тип класифікації:")
-    print("1 - Класифікація тварин")
-    print("2 - Класифікація рослин")
-    print("3 - Вийти")
-    
-    while True:
+            yes_btn = ttk.Radiobutton(frame, text="Так", variable=var, value=True)
+            no_btn = ttk.Radiobutton(frame, text="Ні", variable=var, value=False)
+
+            yes_btn.pack(side=tk.LEFT, padx=5)
+            no_btn.pack(side=tk.LEFT, padx=5)
+
+        # Тип рослини
+        type_frame = ttk.Frame(plant_window)
+        type_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        ttk.Label(type_frame, text="Тип рослини:").pack(anchor=tk.W)
+        self.plant_type_var = tk.StringVar(value="дерево")
+
+        types = [("Дерево", "дерево"), ("Кущ", "кущ"), ("Трава", "трава"),
+                 ("Овоч", "овоч"), ("Фрукт", "фрукт"), ("Інше", "інше")]
+
+        for text, value in types:
+            ttk.Radiobutton(type_frame, text=text, variable=self.plant_type_var,
+                            value=value).pack(anchor=tk.W)
+
+        # Середовище
+        env_frame = ttk.Frame(plant_window)
+        env_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        ttk.Label(env_frame, text="Середовище:").pack(anchor=tk.W)
+        self.environment_var = tk.StringVar(value="суша")
+
+        environments = [("На суші", "суша"), ("У воді", "вода"), ("Інше", "інше")]
+
+        for text, value in environments:
+            ttk.Radiobutton(env_frame, text=text, variable=self.environment_var,
+                            value=value).pack(anchor=tk.W)
+
+        # Кнопка класифікації
+        classify_btn = ttk.Button(plant_window,
+                                  text="Класифікувати",
+                                  command=lambda: self.classify_plant_gui(plant_window))
+        classify_btn.pack(pady=20)
+
+    def classify_plant_gui(self, window):
         try:
-            choice = input("\nВаш вибір (1/2/3): ").strip()
-            
-            if choice == "1":
-                classifier = AnimalClassifier()
-                result = classifier.interactive_classification()
-                print(f"\n🎉 Результат класифікації: {', '.join(result) if result else 'Не визначено'}")
-                break
-                
-            elif choice == "2":
-                classifier = PlantClassifier()
-                result = classifier.interactive_classification()
-                print(f"\n🎉 Результат класифікації: {', '.join(result) if result else 'Не визначено'}")
-                break
-                
-            elif choice == "3":
-                print("До побачення!")
-                exit()
-                
+            characteristics = {}
+
+            # Збираємо відповіді з перемикачів
+            for attr, var in self.plant_vars.items():
+                characteristics[attr] = var.get()
+
+            # Додаємо тип та середовище
+            characteristics['plant_type'] = self.plant_type_var.get()
+            characteristics['environment'] = self.environment_var.get()
+
+            # Класифікація
+            result = self.plant_classifier.classify_plant(characteristics)
+
+            # Вивід результату
+            self.clear_output()
+            self.print_output("🌿 РЕЗУЛЬТАТ КЛАСИФІКАЦІЇ РОСЛИНИ\n")
+            self.print_output("Введені характеристики:")
+            for attr, value in characteristics.items():
+                self.print_output(f"  {attr}: {value}")
+
+            self.print_output("\n🔍 Результат класифікації:")
+            if result:
+                for classification in result:
+                    self.print_output(f"  ✅ {classification}")
             else:
-                print("❗ Будь ласка, оберіть 1, 2 або 3")
-                
-        except KeyboardInterrupt:
-            print("\n\nПрограму перервано. До побачення!")
-            exit()
+                self.print_output("  ❌ Класифікація не визначена")
+
+            window.destroy()
+
         except Exception as e:
-            print(f"❗ Сталася помилка: {e}. Спробуйте ще раз.")
+            messagebox.showerror("Помилка", f"Сталася помилка: {e}")
+
+    def show_demo(self):
+        self.clear_output()
+        self.print_output("📊 ДЕМОНСТРАЦІЯ РОБОТИ СИСТЕМИ\n")
+
+        # Демонстрація для тварин
+        self.print_output("\n🐾 ПРИКЛАДИ КЛАСИФІКАЦІЇ ТВАРИН:")
+
+        test_animals = [
+            {
+                'name': 'Орел',
+                'characteristics': {
+                    'has_feathers': True,
+                    'has_milk': False,
+                    'can_fly': True,
+                    'has_legs': 2
+                }
+            },
+            {
+                'name': 'Кит',
+                'characteristics': {
+                    'has_feathers': False,
+                    'has_milk': True,
+                    'lives_in_water': True,
+                    'has_scales': False
+                }
+            },
+            {
+                'name': 'Змія',
+                'characteristics': {
+                    'has_scales': True,
+                    'lives_in_water': False,
+                    'has_legs': 0,
+                    'has_milk': False
+                }
+            }
+        ]
+
+        for animal in test_animals:
+            classifications = self.animal_classifier.classify_animal(animal['characteristics'])
+            self.print_output(f"\nТварина: {animal['name']}")
+            self.print_output(f"Характеристики: {animal['characteristics']}")
+            self.print_output(f"Класифікація: {', '.join(classifications) if classifications else 'Не визначено'}")
+
+    def show_help(self):
+        self.clear_output()
+        self.print_output("ℹ️ ДОВІДКА ПО СИСТЕМІ\n")
+        self.print_output("Ця експертна система використовує правила типу 'ЯКЩО-ТО'")
+        self.print_output("для класифікації об'єктів на основі їх характеристик.\n")
+
+        self.print_output("ДОСТУПНІ МОДУЛІ:")
+        self.print_output("🐾 Класифікація тварин - визначення типу тварини")
+        self.print_output("🌿 Класифікація рослин - визначення типу рослини")
+        self.print_output("📊 Демонстрація - приклади роботи системи\n")
+
+        self.print_output("ІНСТРУКЦІЯ:")
+        self.print_output("1. Оберіть тип класифікації з головного меню")
+        self.print_output("2. Заповніть характеристики об'єкта")
+        self.print_output("3. Натисніть 'Класифікувати' для отримання результату")
+        self.print_output("4. Результат з'явиться у текстовому полі\n")
+
+        self.print_output("ПРАВИЛА СИСТЕМИ:")
+        self.print_output("- Система аналізує введені факти")
+        self.print_output("- Застосовує відповідні правила")
+        self.print_output("- Повертає всі підходящі категорії")
+
+    def run(self):
+        self.root.mainloop()
 
 
 if __name__ == "__main__":
-    print("🌍 Вітаємо в експертній системі класифікації!")
-    
-    # Запуск демонстрації
-    demo_animal_classification()
-    
-    # Запуск інтерактивного режиму
-    while True:
-        interactive_mode()
-        
-        # Запит на продовження
-        while True:
-            try:
-                continue_choice = input("\n🤔 Бажаєте продовжити? (так/ні): ").strip().lower()
-                if continue_choice in ['так', 'т', 'yes', 'y']:
-                    break
-                elif continue_choice in ['ні', 'н', 'no', 'n']:
-                    print("Дякуємо за використання програми! До побачення! 👋")
-                    exit()
-                else:
-                    print("❗ Будь ласка, введіть 'так' або 'ні'")
-            except KeyboardInterrupt:
-                print("\n\nДякуємо за використання програми! До побачення! 👋")
-                exit()
+    app = ExpertSystemGUI()
+    app.run()
